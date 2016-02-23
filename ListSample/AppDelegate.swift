@@ -13,6 +13,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     var window: UIWindow?
 
+    class func sharedAppDelegate() -> AppDelegate {
+        let sharedAppDelegate = UIApplication.sharedApplication().delegate as! AppDelegate
+        return sharedAppDelegate
+    }
+    
 
     func application(application: UIApplication, didFinishLaunchingWithOptions launchOptions: [NSObject: AnyObject]?) -> Bool {
         // Override point for customization after application launch.
@@ -41,6 +46,24 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
     }
 
-
+    /**
+     共通のプログレス
+     */
+    func showCloseCommonProgress(isForceClose:Bool = false) {
+        if isForceClose == false {
+            if !SVProgressHUD.isVisible(){
+                SVProgressHUD.show()
+            } else {
+                SVProgressHUD.dismiss()
+            }
+        } else {
+            if SVProgressHUD.isVisible(){
+                SVProgressHUD.dismiss()
+            }
+        }
+    }
+    
+    
+    
 }
 
