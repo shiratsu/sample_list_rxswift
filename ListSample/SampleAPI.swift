@@ -46,10 +46,15 @@ class SampleAPI : NSObject {
      求人リストデータ取得
      - parameter dicParam: 検索パラメータ
      */
-    func getWorkListData(dicParam: NSDictionary) -> Observable<NSArray> {
+    func getWorkListData(dicParam: NSDictionary,bool_loadnext: Bool) -> Observable<NSArray> {
         // URL作成
         let strParam = dicParam.urlEncodedString()
         let strUrl = "https://shotworks.jp/sw/app/worklist?" + strParam
+        
+        if !bool_loadnext{
+            self.intNowCount.value = 0
+        }
+        
         
         // 求人リストデータを取得
         let url = NSURL(string: strUrl)!

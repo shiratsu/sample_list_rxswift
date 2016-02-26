@@ -67,3 +67,27 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     
 }
 
+extension NSObject{
+    func notnullCheck(str: String?) ->Bool{
+        var notnullflag = false
+        if let str_constant = str{
+            if str_constant != ""{
+                notnullflag = true
+            }
+        }
+        return notnullflag
+    }
+}
+
+extension UIView{
+
+    //タップにより色を変えるメソッドを呼び出す
+    func changeColorByTap(int_color:Int){
+        
+        self.backgroundColor = UIColor(netHex: int_color)
+    }
+    
+    
+    
+}
+
