@@ -13,7 +13,7 @@ import RxCocoa
 #endif
 
 
-class ViewController: UIViewController {
+class ViewController: UIViewController,WorkListDataSourceDelegate {
 
     @IBOutlet weak var listView: UITableView!
     let disposeBag = DisposeBag()
@@ -55,7 +55,7 @@ class ViewController: UIViewController {
         
         refreshctl = UIRefreshControl()
         listView.addSubview(refreshctl)
-        listView.dataSource = viewModel
+        listView.dataSource = nil
         
         var nib  = UINib(nibName: "WorkItemCell", bundle:nil)
         listView.registerNib(nib, forCellReuseIdentifier:"WorkItemCell")
@@ -89,6 +89,17 @@ class ViewController: UIViewController {
     func setBaseParameter(){
         self.dicBaseParam = NSMutableDictionary()
         
+    }
+    
+    func afterReload() {
+        stopIndicator()
+        setFooterView(listView)
+        isLoading = false
+        
+        if isRefresh == true{
+            refreshctl?.endRefreshing()
+            isRefresh = false
+        }
     }
     
     
@@ -130,23 +141,10 @@ class ViewController: UIViewController {
 
     func setSubscribe(){
         
-        viewModel.items.asObservable()
-            .subscribeNext { [weak self] value in
-                self?.stopIndicator()
-                self?.listView.reloadData()
-                self?.setFooterView(self!.listView)
-                self?.isLoading = false
-                
-                if self?.isRefresh == true{
-                    self?.refreshctl?.endRefreshing()
-                    self?.isRefresh = false
-                }
-            }
+        dataSource.delegate = self
+        
+        viewModel.items.asObservable().bindTo(listView.rx_itemsWithDataSource(dataSource))
             .addDisposableTo(disposeBag)
-        
-        
-//        viewModel.items.asObservable().bindTo(listView.rx_itemsWithDataSource(dataSource))
-//            .addDisposableTo(disposeBag)
         
         //フッタまで行った時
         self.listView.rx_contentOffset
@@ -206,9 +204,7 @@ class ViewController: UIViewController {
             workview.tableFooterView = footer
         }
     }
-    
-//    
-//    
+      
     func tableView(tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat{
         return CGFloat.min
     }
