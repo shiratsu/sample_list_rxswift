@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		5636ABA91C87D81100842401 /* ListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5636ABA81C87D81100842401 /* ListViewModel.swift */; };
+		5636ABAD1C87E9B100842401 /* WorkListDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5636ABAC1C87E9B100842401 /* WorkListDataSource.swift */; };
 		56663D221C7FC23100D33441 /* NoCountCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = 56663D211C7FC23100D33441 /* NoCountCell.xib */; };
 		56663D241C7FC38E00D33441 /* NoCountCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56663D231C7FC38E00D33441 /* NoCountCell.swift */; };
 		56663D271C7FC78E00D33441 /* Wireframe.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56663D261C7FC78E00D33441 /* Wireframe.swift */; };
@@ -59,6 +61,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		5636ABA81C87D81100842401 /* ListViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ListViewModel.swift; sourceTree = "<group>"; };
+		5636ABAC1C87E9B100842401 /* WorkListDataSource.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WorkListDataSource.swift; sourceTree = "<group>"; };
 		5656DBD81C7BF32F00E0F4B2 /* ListSample-Bridging-Header.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "ListSample-Bridging-Header.h"; sourceTree = "<group>"; };
 		56663D211C7FC23100D33441 /* NoCountCell.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = NoCountCell.xib; sourceTree = "<group>"; };
 		56663D231C7FC38E00D33441 /* NoCountCell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NoCountCell.swift; sourceTree = "<group>"; };
@@ -155,6 +159,8 @@
 				567FF7511C76993B00ADDBFF /* Info.plist */,
 				567FF77D1C769EFE00ADDBFF /* ViewController.xib */,
 				5656DBD81C7BF32F00E0F4B2 /* ListSample-Bridging-Header.h */,
+				5636ABA81C87D81100842401 /* ListViewModel.swift */,
+				5636ABAC1C87E9B100842401 /* WorkListDataSource.swift */,
 			);
 			path = ListSample;
 			sourceTree = "<group>";
@@ -357,8 +363,10 @@
 				56663D291C7FC7E600D33441 /* ImageWithView.swift in Sources */,
 				567FF7841C76A9C800ADDBFF /* Dependencies.swift in Sources */,
 				56663D271C7FC78E00D33441 /* Wireframe.swift in Sources */,
+				5636ABAD1C87E9B100842401 /* WorkListDataSource.swift in Sources */,
 				567FF7481C76993B00ADDBFF /* ViewController.swift in Sources */,
 				569AF7061C7D614800D240BF /* WorkItemCell.swift in Sources */,
+				5636ABA91C87D81100842401 /* ListViewModel.swift in Sources */,
 				567FF7821C76A78D00ADDBFF /* SampleAPI.swift in Sources */,
 				56663D241C7FC38E00D33441 /* NoCountCell.swift in Sources */,
 				567FF7461C76993B00ADDBFF /* AppDelegate.swift in Sources */,

@@ -18,8 +18,6 @@ class ViewController: UIViewController {
     @IBOutlet weak var listView: UITableView!
     let sampleApi:SampleAPI = SampleAPI()
     let disposeBag = DisposeBag()
-    var stateWithWorkitems = Variable(WorkListResponse.NoWorkData([]))
-    var workitems = NSArray()
     
     var footer:UIView!
     var footerIndicator: UIActivityIndicatorView!
@@ -36,6 +34,11 @@ class ViewController: UIViewController {
     
     var dicHeight:NSMutableDictionary! = NSMutableDictionary()
     
+    let viewModel:ListViewModel = ListViewModel()
+    
+    let dataSource = WorkListDataSource()
+    
+    var isLoading = false
     
     /**
      xibを読み込む
@@ -77,6 +80,7 @@ class ViewController: UIViewController {
         
         setBaseParameter()
         setParameter()
+        
         AppDelegate.sharedAppDelegate().showCloseCommonProgress()
         sampleApi.getWorkListData(dicParam, bool_loadnext: false)
             .catchError{ [weak self] error -> Observable<NSArray> in
@@ -85,7 +89,7 @@ class ViewController: UIViewController {
             }
             .subscribeNext { [weak self] array in
                 AppDelegate.sharedAppDelegate().showCloseCommonProgress(true)
-                self!.stateWithWorkitems.value = WorkListResponse.InitWorkData(array as! [NSDictionary])
+                self!.viewModel.items.value = array
             }
             .addDisposableTo(disposeBag)
         
@@ -117,21 +121,17 @@ class ViewController: UIViewController {
     
     func isNearTheBottomEdge(contentOffset: CGPoint,workview:UITableView) -> Bool {
         
-        let maxOffset = workview.contentSize.height - workview.frame.size.height
-        
-        //前と変わってなければ、まだロードは終わってない
-        if maxOffset - prevMaxOffset < 100{
-            return false
-        }
-        
+        let diffOffset = workview.contentSize.height - (contentOffset.y+workview.frame.height)
+
         if sampleApi.intTotalCount.value > 0
-            && self.workitems.count > 0
+            && viewModel.items.value.count > 0
             &&
-            (self.workitems.count%20 == 0 && self.workitems.count < Int(sampleApi.intTotalCount.value)
-                && self.workitems.count < self.listMax)
-            && (maxOffset - contentOffset.y) <= ViewController.startLoadingOffset
+            (viewModel.items.value.count%20 == 0 && viewModel.items.value.count < Int(sampleApi.intTotalCount.value)
+                && viewModel.items.value.count < self.listMax)
+            && diffOffset <= ViewController.startLoadingOffset
+            && !isLoading
         {
-            prevMaxOffset = maxOffset
+            isLoading = true
             return true
         }else{
             return false
@@ -140,82 +140,30 @@ class ViewController: UIViewController {
         
     }
     
-    func getListData(){
-        AppDelegate.sharedAppDelegate().showCloseCommonProgress()
-        sampleApi.getWorkListData(NSDictionary(),bool_loadnext: false)
-            .catchError{ [weak self] error -> Observable<NSArray> in
-                print("取得できませんでした")
-                return Observable.just(NSArray())
-            }
-            .subscribeNext { [weak self] array in
-                AppDelegate.sharedAppDelegate().showCloseCommonProgress()
-                self!.stateWithWorkitems.value = WorkListResponse.InitWorkData(array as! [NSDictionary])
+
+    func setSubscribe(){
+        
+        viewModel.items.asObservable()
+            .subscribeNext { [weak self] value in
+                self?.stopIndicator()
+                self?.listView.reloadData()
+                self?.setFooterView(self!.listView)
+                self?.isLoading = false
             }
             .addDisposableTo(disposeBag)
         
-    }
-    
-    
-    func setSubscribe(){
-        self.stateWithWorkitems.asObservable().observeOn(MainScheduler.instance)
-            .subscribeNext { [weak self] state in
-                self!.stopIndicator()
-                //ステータスによってワークリストの処理を分ける
-                switch state {
-                case WorkListResponse.NoWorkData(let results):
-                    self!.workitems = results
-                    self!.listView.reloadData()
-                    break
-                case WorkListResponse.InitWorkData(let results):
-                    self!.workitems = results
-                    self!.listView.reloadData()
-                    break
-                case WorkListResponse.RefreshWorkData(let results):
-                    self!.workitems = results
-                    self!.listView.reloadData()
-                    break
-                case WorkListResponse.AddWorkData(let results):
-                    let current_pos = self!.workitems.count
-                    self!.workitems = self!.workitems.arrayByAddingObjectsFromArray(results as [AnyObject])
-                    
-                    let end_pos = self!.workitems.count
-                    let indexPaths = NSMutableArray()
-                    
-                    for i in current_pos..<end_pos {
-                        indexPaths.addObject(NSIndexPath(forRow: i, inSection: 0))
-                    }
-                    
-                    let reload_ary = indexPaths.copy() as! NSArray
-                    if reload_ary.count > 0{
-                        self!.listView.beginUpdates()
-                        self!.listView.insertRowsAtIndexPaths(reload_ary as! [NSIndexPath], withRowAnimation: UITableViewRowAnimation.Fade)
-                        self!.listView.endUpdates()
-                    }
-                    break
-                }
-                self!.setFooterView(self!.listView)
-            }
-            .addDisposableTo(disposeBag)
         
         //フッタまで行った時
         self.listView.rx_contentOffset
-            .distinctUntilChanged()
-            .flatMap { [weak self] (offset) -> Observable<NSArray> in
-                if self!.isNearTheBottomEdge(offset,workview:self!.listView) {
-                    self!.start = self!.workitems.count
-                    
-                    self!.setParameter()
-                    self!.footerIndicator.startAnimating()
-                    return self!.sampleApi.getWorkListData(self!.dicParam, bool_loadnext: true)
-                } else {
-                    return Observable.empty()
-                }
-            }
-            .subscribeNext { [weak self] results in
-                self!.footerIndicator.stopAnimating()
-                self!.stateWithWorkitems.value = WorkListResponse.AddWorkData(results as! [NSDictionary])
-                //                self.now_loading = false
-                //                print("scroll...")
+            .filter{ [weak self] in self!.isNearTheBottomEdge($0,workview:self!.listView) }
+            .subscribeNext { [weak self] offset in
+                
+                self!.start = self!.viewModel.items.value.count
+                
+                self?.setParameter()
+                self?.footerIndicator.startAnimating()
+                self?.viewModel.addWorkData(self!.dicParam)
+                
             }
             .addDisposableTo(disposeBag)
         
@@ -233,8 +181,8 @@ class ViewController: UIViewController {
                 })!
             }
             .subscribeNext { [weak self] result in
-                self!.refreshctl!.endRefreshing()
-                self!.stateWithWorkitems.value = WorkListResponse.RefreshWorkData(result as! [NSDictionary])
+                self?.refreshctl!.endRefreshing()
+                self?.viewModel.items.value = result
             }
             .addDisposableTo(disposeBag)
     }
@@ -268,7 +216,7 @@ class ViewController: UIViewController {
      :param: workview <#workview description#>
      */
     func setFooterView(workview:UITableView){
-        if self.workitems.count%20 == 0 && self.workitems.count < sampleApi.intTotalCount.value && self.workitems.count < self.listMax{
+        if viewModel.items.value.count%20 == 0 && viewModel.items.value.count < sampleApi.intTotalCount.value && viewModel.items.value.count < self.listMax{
             workview.tableFooterView = footer
         }
     }
@@ -297,7 +245,7 @@ class ViewController: UIViewController {
             return 1
         }
         
-        return self.workitems.count
+        return viewModel.items.value.count
     }
     
     func tableView(tableView: UITableView, heightForRowAtIndexPath indexPath: NSIndexPath) -> CGFloat{
@@ -305,7 +253,7 @@ class ViewController: UIViewController {
             return self.view.frame.size.height
         } else {
             var cell_height:CGFloat = 0
-            if let workdic: AnyObject = self.workitems.safeObjectAtIndex(indexPath.row){
+            if let workdic: AnyObject = viewModel.items.value.safeObjectAtIndex(indexPath.row){
                 let text_height = WorkItemCell.heightForCatchCopy(tableView, workdic: workdic as? NSDictionary)
                 cell_height = 192+text_height
             } else {
@@ -356,7 +304,7 @@ class ViewController: UIViewController {
     func setItemFromServer(cell:UITableViewCell,atIndexPath:NSIndexPath) -> (WorkItemCell?,String?){
         let wcell = cell as! WorkItemCell
         
-        guard let workdic: AnyObject = self.workitems.safeObjectAtIndex(atIndexPath.row) else {
+        guard let workdic: AnyObject = viewModel.items.value.safeObjectAtIndex(atIndexPath.row) else {
             return (nil,nil)
         }
         
