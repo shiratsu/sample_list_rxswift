@@ -16,13 +16,11 @@ import RxCocoa
 class ViewController: UIViewController {
 
     @IBOutlet weak var listView: UITableView!
-    let sampleApi:SampleAPI = SampleAPI()
     let disposeBag = DisposeBag()
     
     var footer:UIView!
     var footerIndicator: UIActivityIndicatorView!
     let listMax:Int = 1000
-    var prevMaxOffset:CGFloat = 0
     static let startLoadingOffset: CGFloat = 20
     var start:Int = 0
     var limit:Int = 20
@@ -73,9 +71,6 @@ class ViewController: UIViewController {
         self.footerIndicator.frame.origin.x = self.view.frame.size.width / 2
         self.footer.addSubview(footerIndicator)
         
-        //初回起動時は初期化
-        sampleApi.intNowCount.value = 0
-        sampleApi.strNowCount.value = "0"
         
         
         setSubscribe()
@@ -171,7 +166,6 @@ class ViewController: UIViewController {
         self.refreshctl!.rx_controlEvent(.ValueChanged)
             .subscribeNext { [weak self] () in
                 self?.start = 0
-                self?.prevMaxOffset = 0
                 self?.setParameter()
                 self?.isRefresh = true
                 self?.viewModel.reloadData((self?.dicParam)!)
@@ -208,7 +202,7 @@ class ViewController: UIViewController {
      :param: workview <#workview description#>
      */
     func setFooterView(workview:UITableView){
-        if viewModel.items.value.count%20 == 0 && viewModel.items.value.count < sampleApi.intTotalCount.value && viewModel.items.value.count < self.listMax{
+        if viewModel.items.value.count%20 == 0 && viewModel.items.value.count < viewModel.api.intTotalCount.value && viewModel.items.value.count < self.listMax{
             workview.tableFooterView = footer
         }
     }
