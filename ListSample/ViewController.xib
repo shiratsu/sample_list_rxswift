@@ -19,7 +19,6 @@
                     <rect key="frame" x="0.0" y="0.0" width="600" height="600"/>
                     <color key="backgroundColor" red="0.93725490199999995" green="0.93725490199999995" blue="0.95686274510000002" alpha="1" colorSpace="calibratedRGB"/>
                     <connections>
-                        <outlet property="dataSource" destination="-1" id="19K-nT-fMY"/>
                         <outlet property="delegate" destination="-1" id="V9r-CD-mJt"/>
                     </connections>
                 </tableView>

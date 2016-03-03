@@ -39,6 +39,7 @@ class ViewController: UIViewController {
     let dataSource = WorkListDataSource()
     
     var isLoading = false
+    var isRefresh = false
     
     /**
      xibを読み込む
@@ -56,6 +57,7 @@ class ViewController: UIViewController {
         
         refreshctl = UIRefreshControl()
         listView.addSubview(refreshctl)
+        listView.dataSource = viewModel
         
         var nib  = UINib(nibName: "WorkItemCell", bundle:nil)
         listView.registerNib(nib, forCellReuseIdentifier:"WorkItemCell")
@@ -82,17 +84,7 @@ class ViewController: UIViewController {
         setParameter()
         
         AppDelegate.sharedAppDelegate().showCloseCommonProgress()
-        sampleApi.getWorkListData(dicParam, bool_loadnext: false)
-            .catchError{ [weak self] error -> Observable<NSArray> in
-                print(error)
-                return Observable.just(NSArray())
-            }
-            .subscribeNext { [weak self] array in
-                AppDelegate.sharedAppDelegate().showCloseCommonProgress(true)
-                self!.viewModel.items.value = array
-            }
-            .addDisposableTo(disposeBag)
-        
+        viewModel.reloadData(dicParam)
         
     }
     
@@ -123,10 +115,10 @@ class ViewController: UIViewController {
         
         let diffOffset = workview.contentSize.height - (contentOffset.y+workview.frame.height)
 
-        if sampleApi.intTotalCount.value > 0
+        if viewModel.api.intTotalCount.value > 0
             && viewModel.items.value.count > 0
             &&
-            (viewModel.items.value.count%20 == 0 && viewModel.items.value.count < Int(sampleApi.intTotalCount.value)
+            (viewModel.items.value.count%20 == 0 && viewModel.items.value.count < Int(viewModel.api.intTotalCount.value)
                 && viewModel.items.value.count < self.listMax)
             && diffOffset <= ViewController.startLoadingOffset
             && !isLoading
@@ -149,9 +141,17 @@ class ViewController: UIViewController {
                 self?.listView.reloadData()
                 self?.setFooterView(self!.listView)
                 self?.isLoading = false
+                
+                if self?.isRefresh == true{
+                    self?.refreshctl?.endRefreshing()
+                    self?.isRefresh = false
+                }
             }
             .addDisposableTo(disposeBag)
         
+        
+//        viewModel.items.asObservable().bindTo(listView.rx_itemsWithDataSource(dataSource))
+//            .addDisposableTo(disposeBag)
         
         //フッタまで行った時
         self.listView.rx_contentOffset
@@ -169,20 +169,12 @@ class ViewController: UIViewController {
         
         //リフレッシュ系
         self.refreshctl!.rx_controlEvent(.ValueChanged)
-            .flatMap { [weak self] () -> Observable<NSArray> in
+            .subscribeNext { [weak self] () in
                 self?.start = 0
                 self?.prevMaxOffset = 0
                 self?.setParameter()
-                return (self?.sampleApi.getWorkListData(self!.dicParam, bool_loadnext: false)
-                    .catchError{
-                        error -> Observable<NSArray> in
-                        print(error)
-                        return Observable.just(NSArray())
-                })!
-            }
-            .subscribeNext { [weak self] result in
-                self?.refreshctl!.endRefreshing()
-                self?.viewModel.items.value = result
+                self?.isRefresh = true
+                self?.viewModel.reloadData((self?.dicParam)!)
             }
             .addDisposableTo(disposeBag)
     }
@@ -221,8 +213,8 @@ class ViewController: UIViewController {
         }
     }
     
-    
-    
+//    
+//    
     func tableView(tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat{
         return CGFloat.min
     }
@@ -240,16 +232,8 @@ class ViewController: UIViewController {
         return 1
     }
     
-    func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        if sampleApi.intTotalCount.value == 0{
-            return 1
-        }
-        
-        return viewModel.items.value.count
-    }
-    
     func tableView(tableView: UITableView, heightForRowAtIndexPath indexPath: NSIndexPath) -> CGFloat{
-        if sampleApi.intTotalCount.value == 0{
+        if viewModel.api.intTotalCount.value == 0{
             return self.view.frame.size.height
         } else {
             var cell_height:CGFloat = 0
@@ -273,57 +257,7 @@ class ViewController: UIViewController {
     }
     
     
-    /*
-    Cellに値を設定する.
-    */
-    func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
-        // Cellの.を取得する.
-        if sampleApi.intTotalCount.value > 0{
-            let cell = workItemCell(tableView, cellForRowAtIndexPath: indexPath, str_xib: "WorkItemCell")
-            return cell
-        } else {
-            let nocell: NoCountCell = tableView.dequeueReusableCellWithIdentifier("NoCountCell", forIndexPath: indexPath) as! NoCountCell
-            nocell.conditionButton.addTarget(self, action: "goBack:", forControlEvents: .TouchUpInside)
-            return nocell
-        }
-    }
-    
-    func workItemCell(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath,str_xib:String) ->WorkItemCell{
-        let wcell: WorkItemCell = tableView.dequeueReusableCellWithIdentifier(str_xib) as! WorkItemCell
-        wcell.separatorInset = UIEdgeInsetsZero
-        wcell.selectionStyle = UITableViewCellSelectionStyle.None
-        updateCell(wcell, atIndexPath: indexPath)
-        
-        return wcell
-    }
-    
-    func updateCell(cell:UITableViewCell,atIndexPath:NSIndexPath){
-        setItemFromServer(cell, atIndexPath: atIndexPath)
-    }
-    
-    func setItemFromServer(cell:UITableViewCell,atIndexPath:NSIndexPath) -> (WorkItemCell?,String?){
-        let wcell = cell as! WorkItemCell
-        
-        guard let workdic: AnyObject = viewModel.items.value.safeObjectAtIndex(atIndexPath.row) else {
-            return (nil,nil)
-        }
-        
-        showWorkItem(wcell, workdic: workdic as! NSDictionary)
-        
-        guard let workid = workdic.objectForKey("WorkId") as? String else {
-            return (nil,nil)
-        }
-        
 
-        
-        return (wcell,workid)
-    }
-    
-    func showWorkItem(wcell:WorkItemCell,workdic:NSDictionary){
-        
-        wcell.workdic = workdic
-        
-    }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
