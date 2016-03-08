@@ -12,9 +12,5 @@ carthage bootstrap --platform ios
 ```
 で、多分OKです。
 
-## githubアカウント
-* https://bitbucket.org/snippets/indival/KRnx
-* 上記に有ります
-
 ## carthage updateを使うタイミング
 * 最新のライブラリを取得したい時
