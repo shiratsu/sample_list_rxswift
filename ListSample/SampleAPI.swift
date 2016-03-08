@@ -18,13 +18,6 @@ enum SampleApiError: ErrorType {
     case Bad(NSData?)
 }
 
-enum WorkListResponse {
-    case NoWorkData([NSDictionary])
-    case InitWorkData([NSDictionary])
-    case RefreshWorkData([NSDictionary])
-    case AddWorkData([NSDictionary])
-}
-
 class SampleAPI : NSObject {
     static let sharedAPI = SampleAPI()
     // 求人取得総件数
@@ -49,7 +42,7 @@ class SampleAPI : NSObject {
     func getWorkListData(dicParam: NSDictionary,bool_loadnext: Bool) -> Observable<NSArray> {
         // URL作成
         let strParam = dicParam.urlEncodedString()
-        let strUrl = "https://shotworks.jp/sw/app/worklist?" + strParam
+        let strUrl = "https://xxxxxxxx.jp/xxxx/app/worklist?" + strParam
         
         if !bool_loadnext{
             self.intNowCount.value = 0
@@ -89,7 +82,7 @@ class SampleAPI : NSObject {
             
         }
         
-        let resultset_key:String = "ResultSet"
+        let resultset_key:String = "xxxxxxxxx"
         
         let responseData:NSDictionary = (dict.objectForKey(resultset_key))! as! NSDictionary
         let totalStr = responseData["totalResultsAvailable"] as? String
@@ -99,7 +92,7 @@ class SampleAPI : NSObject {
             self.strTotalCount.value = String(self.intTotalCount.value)
         }
         
-        guard let entries = dict.objectForKey("Result") as? NSArray else {
+        guard let entries = dict.objectForKey("xxxxxx") as? NSArray else {
             print("Can't find results")
             return NSArray()
         }
